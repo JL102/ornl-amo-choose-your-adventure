@@ -18,6 +18,7 @@ rules:
   prefer-const: off
   no-prototype-builtins: off
   '@typescript-eslint/no-empty-interface': warn
+  '@typescript-eslint/ban-ts-comment': warn
   semi:
     - error
     - always

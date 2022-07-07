@@ -1,70 +1,27 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import { Container, Button, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, useMediaQuery, CardMedia, Paper } from '@mui/material';
-import { styled, useTheme } from '@mui/material/styles';
-import Image from 'mui-image';
+import { Container, Button, Box, } from '@mui/material';
 
 import './App.scss';
-import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-import { InfoDialogProps, InfoDialog, InfoCard } from './controls';
-import { Pages } from './pages';
 
-function StartPage(props) {
-	return (
-		<div className='homepage'>
-			<Container>
-				<Box className='row' sx={{ bgcolor: '#ffffff80', height: '100vh' }}>
-					<h1>
-						<Image style={{'maxWidth': '400px'}} src='./images/better-plants.png' duration={0}></Image>
-					</h1>
-					<Typography variant="h2" component="div" gutterBottom>
-						CHOOSE YOUR OWN SOLUTION!
-					</Typography>
-					<Typography variant="h4" component="div" gutterBottom>
-						Can you decarbonize this industrial facility?
-					</Typography>
-					<br/>
-					<Button onClick={props.onButtonClick} variant='contained' size='large'>START PLAYING</Button>
-				</Box>
-			</Container>
-		</div>
-	);
-}
-
-StartPage.propTypes = {
-	onButtonClick: PropTypes.func.isRequired
-};
+import { InfoDialogProps, InfoDialog, StartPage, SelectScope } from './controls';
+import { Component, pageControls, Pages } from './pages';
+import { resolveToValue } from './functions-and-types';
 
 interface HomeProps {
-	dialog: InfoDialogProps
-}
-
-function HomePage(props: HomeProps) {
-	return (
-		<div className='homepage'>
-			<Box className='row' sx={{ bgcolor: '#ffffff80', height: '100vh' }}>
-				<InfoDialog
-					open={props.dialog.open}
-					onClickBack={props.dialog.onClickBack}
-					onClickContinue={props.dialog.onClickContinue}
-					text={props.dialog.text}
-					cardText={props.dialog.cardText}
-					img={props.dialog.img}
-					imgAlt={props.dialog.imgAlt}
-					title={props.dialog.title}
-				/>
-			</Box>
-		</div>
-	);
+	dialog: AnyDict;
+	selectScope?: AnyDict;
+	onClickBack: () => void;
+	onClickContinue: (data: unknown) => void;
+	controlClass?: Component;
 }
 
 interface AppProps {}
 
 interface AppState {
-	currentPage: symbol|number;
+	currentPage: symbol;
 	companyName: string;
 	dialog: {
 		open: boolean;
@@ -73,16 +30,60 @@ interface AppState {
 		cardText?: string;
 		img?: string;
 		imgAlt?: string;
+	},
+	selectScope?: StringDict; //todo
+	controlClass?: Component;
+}
+
+function Dashboard(props: HomeProps) {
+	const dlg = props.dialog;
+	
+	switch (props.controlClass) {
+		case StartPage:
+			return (<StartPage
+				onButtonClick={props.onClickContinue}
+			/>);
+		case SelectScope:
+			if (!props.selectScope) throw new Error('selectScope not defined');
+			return (<SelectScope
+				title={props.selectScope.title}
+				choice1={props.selectScope.choice1}
+				choice2={props.selectScope.choice2}
+				onChoice1={() => props.onClickContinue(1)}
+				onChoice2={() => props.onClickContinue(2)}
+			/>);
+		default:
+			return <></>;
 	}
 }
-const text = 'For the past couple of decades, the automotive industry has been under pressure from regulators, public interest groups, stakeholders, customers, investors, and financial institutions to pursue a more sustainable model of growth.\nAs a sustainability manager at {$companyName}, your job is to make sure your facility meets its new corporate carbon reduction goal:';
-const cardText = '{50%} carbon reduction over the next {10 years} with a {$1,000,000 annual budget}';
+
+function HomePage(props: HomeProps) {
+	const dlg = props.dialog;
+	
+	return (
+		<div className='homepage'>
+			<Box className='row' sx={{ bgcolor: '#ffffff80', height: '100vh' }}>
+				<Dashboard {...props}/>
+			</Box>
+			<InfoDialog
+				open={props.controlClass === InfoDialog && dlg.open}
+				title={dlg.title}
+				img={dlg.img}
+				imgAlt={dlg.imgAlt}
+				text={dlg.text}
+				cardText={dlg.cardText}
+				onClickBack={props.onClickBack}
+				onClickContinue={props.onClickContinue}
+			/>
+		</div>
+	);
+}
 
 /**
  * Just a helper function to clone an object, modify certain keys, and return the cloned object. 
  * This is because React prefers to keep objects within a state immutable.
  */
-function cloneAndModify(obj, newValues) {
+function cloneAndModify<T>(obj: T, newValues: AnyDict): T {
 	let newObj = JSON.parse(JSON.stringify(obj));
 	for (let key of Object.keys(newValues)) {
 		newObj[key] = newValues[key];
@@ -90,104 +91,137 @@ function cloneAndModify(obj, newValues) {
 	return newObj;
 }
 
-class App extends React.Component <AppProps, AppState> {
+class App extends React.PureComponent <AppProps, AppState> {
 	constructor(props: AppProps) { 
 		super(props);
 		this.state = {
 			currentPage: Pages.start,
 			companyName: 'Auto-Man, Inc.',
 			dialog: {
-				open: true,
+				open: false,
 				title: '',
 				text: '',
 				cardText: undefined
-			}
+			},
+			selectScope: undefined,
+			controlClass: pageControls[Pages.start].controlClass,
 		};
+		// @ts-ignore - for debugging
+		window.app = this;
+		
+		// todo
+		// addEventListener('popstate', this.handleHistoryPopState.bind(this));
 	}
 	
 	/**
 	 * Replaces variables from the app state, such as "$companyName" -> this.state.companyName
-	 * @param text Text to replace
 	 */
-	fillTemplateText(text: string) {
+	fillTemplateText<T=AnyDict>(obj: T): T{
 		const regex = /\$([a-zA-Z]\w*?)(\W)/g;
-		return text.replace(regex, (match, variableKey, nextCharacter) => {
-			if (this.state.hasOwnProperty(variableKey)) {
-				return String(this.state[variableKey]) + nextCharacter;
+		
+		for (let key of Object.keys(obj)) {
+			if (typeof obj[key] === 'string') {
+				obj[key] = obj[key].replace(regex, (match, variableKey, nextCharacter) => {
+					if (this.state.hasOwnProperty(variableKey)) {
+						return String(this.state[variableKey]) + nextCharacter;
+					}
+					else {
+						throw new SyntaxError(`Invalid variable name ${match}`);
+					}
+				});
 			}
-			else {
-				throw new SyntaxError(`Invalid variable name ${match}`);
-			}
-		});
+		}
+		return obj;
 	}
 	
-	handleHomepageClick() {
+	getThisPageControl() {
+		let thisPageControl = pageControls[this.state.currentPage];
+		if (!thisPageControl) 
+			throw new TypeError(`Page controls not defined for the symbol ${this.state.currentPage.description}`);
+		return thisPageControl;
+	}
+	
+	setPage(page: symbol) {
 		
-		let dialog = cloneAndModify(this.state.dialog, {
-			open: true,
-			title: 'Introduction',
-			text: this.fillTemplateText(text),
-			cardText: this.fillTemplateText(cardText),
-			img: 'images/manufacturing.png',
-			imgAlt: 'A robotic arm working on a car.'
-		});
+		let thisPageControl = pageControls[page];
+		if (!thisPageControl) 
+			throw new TypeError(`Page controls not defined for the symbol ${page.description}`);
+		
+		let controlClass = thisPageControl.controlClass;
+		let controlProps = this.fillTemplateText(thisPageControl.controlProps);
+		
+		let dialog, selectScope;
+		
+		if (controlClass === InfoDialog) {
+			dialog = cloneAndModify(this.state.dialog, controlProps);
+			dialog.open = true;
+		}
+		else {
+			dialog = cloneAndModify(this.state.dialog, {open: false});
+		}
+		
+		if (controlClass === SelectScope) {
+			selectScope = controlProps;
+		}
 		
 		this.setState({
-			currentPage: Pages.home,
-			dialog: dialog,
+			currentPage: page, 
+			dialog: dialog, 
+			controlClass: controlClass,
+			selectScope: selectScope
 		});
 	}
 	
 	handleDialogClickBack() {
-		let dialog = cloneAndModify(this.state.dialog, {open: false});
+		let thisPageControl = this.getThisPageControl();
+		let nextPage = resolveToValue(thisPageControl.onBack);
 		
-		let newCurrentPage = this.state.currentPage;
-		
-		if (this.state.currentPage === Pages.home) {
-			newCurrentPage = Pages.start;
-		}
-		
-		this.setState({dialog: dialog, currentPage: newCurrentPage});
+		this.setPage(nextPage);
 	}
 	
-	handleDialogClickContinue() {
-		let dialog = cloneAndModify(this.state.dialog, {open: false});
+	/**
+	 * @param data Any data to be passed into pageControl.onContinue - Depends on the control
+	 */
+	handleDialogClickContinue(data?: unknown) {
+		let thisPageControl = this.getThisPageControl();
+		let nextPage = resolveToValue(thisPageControl.onContinue, undefined, [data], this);
 		
-		this.setState({dialog: dialog});
+		this.setPage(nextPage);
 		
-		// sample
-		setTimeout(() => {
-			let dialog = cloneAndModify(this.state.dialog, {
-				open: true,
-				title: '{SELECTED}: DIGITAL TWIN ANALYSIS',
-				cardText: 'You have achieved {2%} carbon emissions reduction and spent {$90,000} dollars.',
-				text: '<a href="https://betterbuildingssolutioncenter.energy.gov/implementation-models/ford-motor-company-dearborn-campus-uses-a-digital-twin-tool-energy-plant" target="_blank">{Ford Motor Company: Dearborn Campus Uses A Digital Twin Tool For Energy Plant Management}</a>\n\nGood choice! Ford Motor Company used digital twin to improve the life cycle of their campus’s central plant. The new plant is projected to achieve a 50% reduction in campus office space energy and water use compared to their older system.',
-        img: 'images/ford.png'
-			});
-			this.setState({dialog: dialog});
-		}, 500);
+		return;
+		// Symbols can't be cloned
+		let symbolKey = Symbol.keyFor(nextPage);
+		// Add to window history for back button
+		history.pushState({page: symbolKey}, '', symbolKey); 
+	}
+	
+	// todo
+	handleHistoryPopState(event) {
+		console.log(event);
+		if (!event.state) return;
+		
+		let lastPage: symbol = Symbol.for(event.state.page);
+		if (!lastPage) return console.log('lastpage');
+		
+		let lastPageControl = pageControls[lastPage];
+		if (!lastPageControl) return console.log('lastpcontrol');
+		this.setPage(resolveToValue(lastPageControl.onBack));
 	}
 	
 	render() {
-		switch (this.state.currentPage) {
-			case Pages.start:
-				return <StartPage onButtonClick={() => this.handleHomepageClick()}></StartPage>;
-			case Pages.home:
-				return <HomePage 
-						dialog={{
-							open: this.state.dialog.open,
-							onClickBack: () => this.handleDialogClickBack(),
-							onClickContinue: () => this.handleDialogClickContinue(),
-							text: this.state.dialog.text,
-							cardText: this.state.dialog.cardText,
-							img: this.state.dialog.img,
-							imgAlt: this.state.dialog.imgAlt,
-							title: this.state.dialog.title,
-						}}
-					/>;
-			default:
-				return;
-		}
+		return (
+			<div className='homepage'>
+				<Container maxWidth='xl'>
+					<HomePage 
+						dialog={this.state.dialog}
+						selectScope={this.state.selectScope}
+						onClickBack={() => this.handleDialogClickBack()}
+						onClickContinue={(data?: unknown) => this.handleDialogClickContinue(data)}
+						controlClass={this.state.controlClass}
+					/>
+				</Container>
+			</div>
+		);
 	}
 }
 
