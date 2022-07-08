@@ -1,5 +1,10 @@
 import { InfoDialog, InfoDialogProps, SelectScope, StartPage } from "./controls";
 import React from 'react';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import FactoryIcon from '@mui/icons-material/Factory';
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import { Grid, Typography } from "@mui/material";
+import { Box } from "@mui/system";
 
 /**
  * Symbols to represent each page.
@@ -44,7 +49,33 @@ pageControls[Pages.selectScope] = {
 	controlProps: {
 		title: 'To begin, you will need to decide which types of projects to pursue. {Would you like to...}',
 		choice1: 'Tackle Scope 1 emissions – fossil fuel consumption',
-		choice2: 'Tackle Scope 2 emissions – purchased electricity'
+		choice2: 'Tackle Scope 2 emissions – purchased electricity',
+		choices: [
+			{
+				title: 'A',
+				text: 'Tackle Scope 1 emissions – fossil fuel consumption',
+				infoPopup: <div style={{maxWidth: '200px'}}>
+					<Typography variant='h6'>
+						Scope 1: Direct Emissions
+					</Typography>
+					<Typography variant='body1'>Company emissions that are owned or controlled by the organization directly</Typography>
+					<Box>
+						<Grid container spacing={2}>
+							<Grid item xs={4}>
+								<LocalShippingIcon/>
+							</Grid>
+							<Grid item xs={4}>
+								<FactoryIcon/>
+							</Grid>
+							<Grid item xs={4}>
+								<LocationCityIcon/>
+							</Grid>
+						</Grid>
+					</Box>
+				</div>
+			}
+			
+		]
 	}
 };
 
@@ -68,7 +99,7 @@ export declare interface PageControl {
 	onBack: Resolvable<symbol>;
 	onContinue: Resolvable<symbol>;
 	controlProps: {
-		[key: string]: string;
+		[key: string]: any;
 	}
 }
 

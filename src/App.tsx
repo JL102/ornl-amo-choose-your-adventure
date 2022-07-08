@@ -51,6 +51,7 @@ function Dashboard(props: HomeProps) {
 				choice2={props.selectScope.choice2}
 				onChoice1={() => props.onClickContinue(1)}
 				onChoice2={() => props.onClickContinue(2)}
+				choices={props.selectScope.choices}
 			/>);
 		default:
 			return <></>;

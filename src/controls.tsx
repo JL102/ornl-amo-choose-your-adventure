@@ -6,6 +6,7 @@ import Image from 'mui-image';
 import { styled, useTheme } from '@mui/material/styles';
 import React from 'react';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import BasicPopover from "./BasicPopover";
 
 // todo types
 export function StartPage(props) {
@@ -39,18 +40,45 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 export function SelectScope(props: SelectScopeProps) {
-	console.log(props);
+	
+	let numChoices = props.choices.length;
+	let gridWidth = 12 / numChoices;
+	
+	const gridItems = props.choices.map((choice, idx) => {
+		return (
+			<Grid item xs={12} sm={gridWidth} key={idx}>
+				<Item>
+					<Typography variant='h4'>{choice.title}</Typography>
+						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(choice.text)}/>
+						{
+							choice.infoPopup ? 
+								<BasicPopover text='Info' variant='outlined' startIcon={<QuestionMarkIcon/>}>
+									{/* <div>HELLO WORLD</div> */}
+									<>{choice.infoPopup}</>
+								</BasicPopover>
+							: <></>
+						}
+						<Button onClick={props.onChoice1} variant='contained'>Select</Button>
+				</Item>
+			</Grid>
+		);
+	});
+	
 	return (
 		<Box m={2}>
 			<Typography variant='h5' dangerouslySetInnerHTML={parseSpecialText(props.title)}></Typography>
 			<br/>
 			<Grid container spacing={2}>
+				{gridItems}
 				<Grid item xs={12} sm={6}>
 					<Item>
 						<Typography variant='h4'>A</Typography>
 						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(props.choice1)}/>
 						<Stack direction="row" justifyContent="center" spacing={2}>
-							<Button variant='outlined' startIcon={<QuestionMarkIcon/>}>Info</Button>
+							<BasicPopover text='Info' variant='outlined' startIcon={<QuestionMarkIcon/>}>
+								<h1>Hello world!</h1>
+								<p>Goodbye world!</p>
+							</BasicPopover>
 							<Button onClick={props.onChoice1} variant='contained'>Select</Button>
 						</Stack>
 					</Item>
@@ -130,12 +158,19 @@ export class InfoDialog extends React.Component <InfoDialogProps> {
 	}
 }
 
+export interface SelectScopeChoice {
+	title: string;
+	text: string;
+	infoPopup?: React.Component
+}
+
 export interface SelectScopeProps {
 	title: string;
 	choice1: string;
 	choice2: string;
 	onChoice1: () => void;
 	onChoice2: () => void;
+	choices: SelectScopeChoice[];
 }
 
 export interface InfoDialogProps {
