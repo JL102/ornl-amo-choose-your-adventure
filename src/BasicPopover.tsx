@@ -2,6 +2,7 @@ import * as React from 'react';
 import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import { Box } from '@mui/material';
 
 export default function BasicPopover(props: PopoverProps) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
@@ -18,7 +19,7 @@ export default function BasicPopover(props: PopoverProps) {
   const id = open ? 'simple-popover' : undefined;
 
   return (
-    <div>
+    <React.Fragment>
 		<Button aria-describedby={id} 
 			variant={props.variant} 
 			onClick={handleClick}
@@ -40,9 +41,9 @@ export default function BasicPopover(props: PopoverProps) {
 				horizontal: 'center',
 			}}
 		>
-			<Typography sx={{ p: 2 }}>{props.children}</Typography>
+			<Box sx={{ p: 2 }}>{props.children}</Box>
 		</Popover>
-    </div>
+    </React.Fragment>
   );
 }
 

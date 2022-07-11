@@ -8,6 +8,10 @@ import React from 'react';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import BasicPopover from "./BasicPopover";
 
+export function Emphasis(props: React.PropsWithChildren) {
+	return <span className='emphasis'>{props.children}</span>;
+}
+
 // todo types
 export function StartPage(props) {
 	return (
@@ -45,20 +49,23 @@ export function SelectScope(props: SelectScopeProps) {
 	let gridWidth = 12 / numChoices;
 	
 	const gridItems = props.choices.map((choice, idx) => {
+		
+		let infoPopup = <></>;
+		if (choice.infoPopup) {
+			infoPopup = <BasicPopover text='Info' variant='outlined' startIcon={<QuestionMarkIcon/>}>
+				{choice.infoPopup}
+			</BasicPopover>;
+		}
+		
 		return (
 			<Grid item xs={12} sm={gridWidth} key={idx}>
 				<Item>
 					<Typography variant='h4'>{choice.title}</Typography>
 						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(choice.text)}/>
-						{
-							choice.infoPopup ? 
-								<BasicPopover text='Info' variant='outlined' startIcon={<QuestionMarkIcon/>}>
-									{/* <div>HELLO WORLD</div> */}
-									<>{choice.infoPopup}</>
-								</BasicPopover>
-							: <></>
-						}
-						<Button onClick={props.onChoice1} variant='contained'>Select</Button>
+						<Stack direction="row" justifyContent="center" spacing={2}>
+							{infoPopup}
+							<Button onClick={() => props.onPageCallback(choice.onSelect)} variant='contained'>Select</Button>
+						</Stack>
 				</Item>
 			</Grid>
 		);
@@ -70,31 +77,14 @@ export function SelectScope(props: SelectScopeProps) {
 			<br/>
 			<Grid container spacing={2}>
 				{gridItems}
-				<Grid item xs={12} sm={6}>
-					<Item>
-						<Typography variant='h4'>A</Typography>
-						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(props.choice1)}/>
-						<Stack direction="row" justifyContent="center" spacing={2}>
-							<BasicPopover text='Info' variant='outlined' startIcon={<QuestionMarkIcon/>}>
-								<h1>Hello world!</h1>
-								<p>Goodbye world!</p>
-							</BasicPopover>
-							<Button onClick={props.onChoice1} variant='contained'>Select</Button>
-						</Stack>
-					</Item>
-				</Grid>
-				<Grid item xs={12} sm={6}>
-					<Item>
-						<Typography variant='h4'>B</Typography>
-						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(props.choice2)}/>
-						<Stack direction="row" justifyContent="center" spacing={2}>
-							<Button variant='outlined' startIcon={<QuestionMarkIcon/>}>Info</Button>
-							<Button onClick={props.onChoice2} variant='contained'>Select</Button>
-						</Stack>
-					</Item>
-				</Grid>
 			</Grid>
 		</Box>
+	);
+}
+
+export function GroupedChoices(props) {
+	return (
+		<h1>works</h1>
 	);
 }
 
@@ -110,6 +100,16 @@ export const InfoCard = styled(Paper)(({ theme }) => ({
 function InfoDialogFunc (props: InfoDialogProps) {
 	const theme = useTheme();
 	const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+	
+	const cardImage = (props.img) ? 
+		<CardMedia
+			component="img"
+			height="260"
+			image={props.img}
+			alt={props.imgAlt}
+		/>
+		: <></>;
+	
 	return (
 		<Dialog
 			fullScreen={fullScreen}
@@ -118,12 +118,7 @@ function InfoDialogFunc (props: InfoDialogProps) {
 			// onClose={handleClose}
 			aria-describedby="alert-dialog-slide-description"
 		>
-			<CardMedia
-				component="img"
-				height="260"
-				image={props.img}
-				alt={props.imgAlt}
-			/>
+			{cardImage}
 			<DialogTitle className='semi-emphasis' dangerouslySetInnerHTML={parseSpecialText(props.title)}></DialogTitle>
 			<DialogContent>
 				<DialogContentText id="alert-dialog-slide-description" gutterBottom dangerouslySetInnerHTML={parseSpecialText(props.text)}>
@@ -159,18 +154,18 @@ export class InfoDialog extends React.Component <InfoDialogProps> {
 }
 
 export interface SelectScopeChoice {
-	title: string;
+	title?: string;
 	text: string;
-	infoPopup?: React.Component
+	infoPopup?: React.ReactNode;
+	onSelect: PageCallback;
+	disabled?: Resolvable<boolean>;
 }
 
 export interface SelectScopeProps {
 	title: string;
-	choice1: string;
-	choice2: string;
-	onChoice1: () => void;
-	onChoice2: () => void;
+	// onChoice: PageCallback;
 	choices: SelectScopeChoice[];
+	onPageCallback: (callback?: PageCallback) => void;
 }
 
 export interface InfoDialogProps {

@@ -1,8 +1,11 @@
-import { InfoDialog, InfoDialogProps, SelectScope, StartPage } from "./controls";
+import { Emphasis, GroupedChoices, InfoDialog, InfoDialogProps, SelectScope, SelectScopeChoice, StartPage } from "./controls";
 import React from 'react';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
+import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import Co2Icon from '@mui/icons-material/Co2';
 import { Grid, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 
@@ -48,8 +51,6 @@ pageControls[Pages.selectScope] = {
 	},
 	controlProps: {
 		title: 'To begin, you will need to decide which types of projects to pursue. {Would you like to...}',
-		choice1: 'Tackle Scope 1 emissions – fossil fuel consumption',
-		choice2: 'Tackle Scope 2 emissions – purchased electricity',
 		choices: [
 			{
 				title: 'A',
@@ -58,23 +59,83 @@ pageControls[Pages.selectScope] = {
 					<Typography variant='h6'>
 						Scope 1: Direct Emissions
 					</Typography>
-					<Typography variant='body1'>Company emissions that are owned or controlled by the organization directly</Typography>
-					<Box>
-						<Grid container spacing={2}>
+					<Typography variant='body1'>Company emissions that are owned or controlled by the organization directly.</Typography>
+					<Box sx={{marginTop: 2}}>
+						<Grid container spacing={4} sx={{textAlign: 'center'}}>
 							<Grid item xs={4}>
-								<LocalShippingIcon/>
+								<LocalShippingIcon fontSize='large'/>
 							</Grid>
 							<Grid item xs={4}>
-								<FactoryIcon/>
+								<FactoryIcon fontSize='large'/>
 							</Grid>
 							<Grid item xs={4}>
-								<LocationCityIcon/>
+								<LocationCityIcon fontSize='large'/>
 							</Grid>
 						</Grid>
 					</Box>
-				</div>
-			}
+				</div>,
+				onSelect: function (state, nextState) {
+					console.log(this);
+					return Pages.scope1Projects;
+				},
+			},
+			{
+				title: 'B',
+				text: 'Tackle Scope 1 emissions – fossil fuel consumption',
+				infoPopup: <div style={{maxWidth: '200px'}}>
+					<Typography variant='h6'>
+						Scope 2: Indirect Emissions
+					</Typography>
+					<Typography variant='body1'>Company emissions that are caused indirectly when the energy it purchases and uses is produced.</Typography>
+					<Box sx={{marginTop: 2}}>
+						<Grid container spacing={4} sx={{textAlign: 'center'}}>
+							<Grid item xs={6}>
+								<FlashOnIcon fontSize='large'/>
+							</Grid>
+							<Grid item xs={6}>
+								<ElectricalServicesIcon fontSize='large'/>
+							</Grid>
+						</Grid>
+					</Box>
+				</div>,
+				onSelect: () => Pages.scope2Projects,
+			},
 			
+		]
+	}
+};
+
+pageControls[Pages.scope1Projects] = {
+	controlClass: GroupedChoices,
+	onBack: Pages.selectScope,
+	onContinue: Pages.selectScope,
+	controlProps: {
+		title: '{Scope 1 Emissions Projects} - Good choice! You have {15 minutes} to explore this menu. Spend it wisely!',
+		groups: [
+			{
+				title: 'Invest in energy efficiency',
+				choices: [
+					// TODO TOMORROW: this
+					{
+						title: '1',
+						text: 'Upgrade heat recovery on boiler/furnace system',
+						infoPopup: <div style={{maxWidth: '200px'}}>
+							<Typography variant='h6'>Energy Efficiency - Waste Heat Recovery</Typography>
+							<Typography variant='body1'>Currently, your facility uses inefficient, high-volume furnace technology, where combustion gases are evacuated through a side take-off duct into the emission control system</Typography>
+							<Typography variant='body1'>You can use digital twin technology to accurately <Emphasis>detect energy losses</Emphasis>, pinpoint areas where energy can be conserved, and improve the overall performance of production lines.</Typography>
+						</div>
+					},
+					{
+						title: '1',
+						text: 'Upgrade heat recovery on boiler/furnace system',
+						infoPopup: <div style={{maxWidth: '200px'}}>
+							<Typography variant='h6'>Energy Efficiency - Digital Twin Analysis</Typography>
+							<Typography variant='body1'>A digital twin is the virtual representation of a physical object or system across its lifecycle</Typography>
+							<Typography variant='body1'>You can use digital twin technology to accurately <Emphasis>detect energy losses</Emphasis>, pinpoint areas where energy can be conserved, and improve the overall performance of production lines.</Typography>
+						</div>
+					},
+				]
+			}
 		]
 	}
 };
@@ -103,11 +164,20 @@ export declare interface PageControl {
 	}
 }
 
-declare interface PageControls {
-	[key: symbol]: PageControl;
+export declare interface SelectScopeControl extends PageControl {
+	controlClass: typeof SelectScope;
+	controlProps: {
+		title: string;
+		choices: SelectScopeChoice[];
+	}
 }
 
-/**
- * Either the desired return type, or a function which returns the desired type.
- */
-declare type Resolvable<T> = T|((params: unknown) => T);
+declare interface PageControls {
+	[key: symbol]: PageControl|SelectScopeControl;
+}
+
+export class PageError extends Error {
+	constructor(message) {
+		super(message);
+	}
+}

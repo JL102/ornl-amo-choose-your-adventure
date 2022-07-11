@@ -1,3 +1,4 @@
+import App from "./App";
 
 /**
  * Parse handcrafted text into pretty-printed HTML. Currently supported: 
@@ -88,4 +89,18 @@ declare global {
 	interface Dict<T> {
 		[key: string]: T;
 	}
+	
+
+	/**
+	 * Either the desired return type, or a function which returns the desired type.
+	 * @param state Read-only, immutable state of the main app
+	 * @param nextState Mutable object containing properties to assign to the app's state next.
+	 */
+	type Resolvable<T> = T|((state?: AnyDict, nextState?: AnyDict) => T);
+	/**
+	 * Callback for a button click which 
+	 * @param state Read-only, immutable state of the main app
+	 * @param nextState Mutable object containing properties to assign to the app's state next.
+	 */
+	type PageCallback = (this: App, state?: AnyDict, nextState?: AnyDict) => symbol;
 }

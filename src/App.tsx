@@ -6,16 +6,17 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import { InfoDialogProps, InfoDialog, StartPage, SelectScope } from './controls';
-import { Component, pageControls, Pages } from './pages';
+import { InfoDialogProps, InfoDialog, StartPage, SelectScope, SelectScopeProps } from './controls';
+import { Component, pageControls, PageError, Pages } from './pages';
 import { resolveToValue } from './functions-and-types';
 
 interface HomeProps {
 	dialog: AnyDict;
 	selectScope?: AnyDict;
 	onClickBack: () => void;
-	onClickContinue: (data: unknown) => void;
+	onClickContinue: (data?: unknown) => void;
 	controlClass?: Component;
+	onPageCallback: (callback?: PageCallback) => void;
 }
 
 interface AppProps {}
@@ -47,11 +48,8 @@ function Dashboard(props: HomeProps) {
 			if (!props.selectScope) throw new Error('selectScope not defined');
 			return (<SelectScope
 				title={props.selectScope.title}
-				choice1={props.selectScope.choice1}
-				choice2={props.selectScope.choice2}
-				onChoice1={() => props.onClickContinue(1)}
-				onChoice2={() => props.onClickContinue(2)}
 				choices={props.selectScope.choices}
+				onPageCallback={props.onPageCallback}
 			/>);
 		default:
 			return <></>;
@@ -138,7 +136,7 @@ class App extends React.PureComponent <AppProps, AppState> {
 	getThisPageControl() {
 		let thisPageControl = pageControls[this.state.currentPage];
 		if (!thisPageControl) 
-			throw new TypeError(`Page controls not defined for the symbol ${this.state.currentPage.description}`);
+			throw new PageError(`Page controls not defined for the symbol ${this.state.currentPage.description}`);
 		return thisPageControl;
 	}
 	
@@ -146,7 +144,7 @@ class App extends React.PureComponent <AppProps, AppState> {
 		
 		let thisPageControl = pageControls[page];
 		if (!thisPageControl) 
-			throw new TypeError(`Page controls not defined for the symbol ${page.description}`);
+			throw new PageError(`Page controls not defined for the symbol ${page.description}`);
 		
 		let controlClass = thisPageControl.controlClass;
 		let controlProps = this.fillTemplateText(thisPageControl.controlProps);
@@ -185,6 +183,7 @@ class App extends React.PureComponent <AppProps, AppState> {
 	 */
 	handleDialogClickContinue(data?: unknown) {
 		let thisPageControl = this.getThisPageControl();
+		
 		let nextPage = resolveToValue(thisPageControl.onContinue, undefined, [data], this);
 		
 		this.setPage(nextPage);
@@ -196,6 +195,16 @@ class App extends React.PureComponent <AppProps, AppState> {
 		history.pushState({page: symbolKey}, '', symbolKey); 
 	}
 	
+	handlePageCallback(callback?: PageCallback) {
+		if (typeof callback !== 'function') return;
+		
+		// Mutable params to update
+		let newStateParams: AnyDict = {};
+		let nextPage = resolveToValue(callback, undefined, [this.state, newStateParams], this);
+		
+		this.setPage(nextPage);
+	}
+	
 	// todo
 	handleHistoryPopState(event) {
 		console.log(event);
@@ -205,7 +214,6 @@ class App extends React.PureComponent <AppProps, AppState> {
 		if (!lastPage) return console.log('lastpage');
 		
 		let lastPageControl = pageControls[lastPage];
-		if (!lastPageControl) return console.log('lastpcontrol');
 		this.setPage(resolveToValue(lastPageControl.onBack));
 	}
 	
@@ -219,6 +227,7 @@ class App extends React.PureComponent <AppProps, AppState> {
 						onClickBack={() => this.handleDialogClickBack()}
 						onClickContinue={(data?: unknown) => this.handleDialogClickContinue(data)}
 						controlClass={this.state.controlClass}
+						onPageCallback={(callback) => this.handlePageCallback(callback)}
 					/>
 				</Container>
 			</div>
