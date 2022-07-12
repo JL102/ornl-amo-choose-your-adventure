@@ -6,51 +6,61 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import { InfoDialogProps, InfoDialog, StartPage, SelectScope, SelectScopeProps } from './controls';
+import { InfoDialogProps, InfoDialog, StartPage, SelectScope, SelectScopeProps, GroupedChoices, DialogProps } from './controls';
 import { Component, pageControls, PageError, Pages } from './pages';
-import { resolveToValue } from './functions-and-types';
+import { resolveToValue, fillDialogProps } from './functions-and-types';
+import { ButtonGroupButton } from './Buttons';
 
 interface HomeProps {
 	dialog: AnyDict;
-	selectScope?: AnyDict;
-	onClickBack: () => void;
-	onClickContinue: (data?: unknown) => void;
+	selectProps?: AnyDict;
+	currentPageProps?: AnyDict;
 	controlClass?: Component;
-	onPageCallback: (callback?: PageCallback) => void;
+	doPageCallback: (callback?: PageCallback) => void;
+	summonInfoDialog: (props: any) => void;
 }
 
-interface AppProps {}
-
-interface AppState {
+export interface AppState {
 	currentPage: symbol;
 	companyName: string;
-	dialog: {
-		open: boolean;
-		title: string;
-		text: string;
-		cardText?: string;
-		img?: string;
-		imgAlt?: string;
-	},
-	selectScope?: StringDict; //todo
+	dialog: DialogProps,
+	currentPageProps?: AnyDict; // todo
 	controlClass?: Component;
 }
 
 function Dashboard(props: HomeProps) {
-	const dlg = props.dialog;
-	
 	switch (props.controlClass) {
 		case StartPage:
-			return (<StartPage
-				onButtonClick={props.onClickContinue}
-			/>);
 		case SelectScope:
-			if (!props.selectScope) throw new Error('selectScope not defined');
-			return (<SelectScope
-				title={props.selectScope.title}
-				choices={props.selectScope.choices}
-				onPageCallback={props.onPageCallback}
+		case GroupedChoices:
+			if (!props.currentPageProps) throw new Error('currentPageProps not defined'); 
+			return (<props.controlClass
+				{...props.currentPageProps} // Pass everything into the child
+				doPageCallback={props.doPageCallback}
+				summonInfoDialog={props.summonInfoDialog}
 			/>);
+		// case StartPage:
+		// 	return (<StartPage
+		// 		buttons={props.buttons}
+		// 		doPageCallback={props.doPageCallback}
+		// 		summonInfoDialog={props.summonInfoDialog}
+		// 	/>);
+		// case SelectScope:
+		// 	if (!props.selectProps) throw new Error('selectScope not defined');
+		// 	return (<SelectScope
+		// 		title={props.selectProps.title}
+		// 		choices={props.selectProps.choices}
+		// 		doPageCallback={props.doPageCallback}
+		// 		summonInfoDialog={props.summonInfoDialog}
+		// 	/>);
+		// case GroupedChoices:
+		// 	if (!props.groupedProps) throw new Error('groupedChoices not defined'); 
+		// 	return (<GroupedChoices
+		// 		title={props.groupedProps.title}
+		// 		groups={props.groupedProps.groups}
+		// 		doPageCallback={props.doPageCallback}
+		// 		summonInfoDialog={props.summonInfoDialog}
+		// 	/>);
 		default:
 			return <></>;
 	}
@@ -65,14 +75,15 @@ function HomePage(props: HomeProps) {
 				<Dashboard {...props}/>
 			</Box>
 			<InfoDialog
-				open={props.controlClass === InfoDialog && dlg.open}
+				open={dlg.open}
 				title={dlg.title}
 				img={dlg.img}
 				imgAlt={dlg.imgAlt}
 				text={dlg.text}
 				cardText={dlg.cardText}
-				onClickBack={props.onClickBack}
-				onClickContinue={props.onClickContinue}
+				buttons={dlg.buttons}
+				doPageCallback={props.doPageCallback}
+				summonInfoDialog={props.summonInfoDialog}
 			/>
 		</div>
 	);
@@ -90,8 +101,8 @@ function cloneAndModify<T>(obj: T, newValues: AnyDict): T {
 	return newObj;
 }
 
-class App extends React.PureComponent <AppProps, AppState> {
-	constructor(props: AppProps) { 
+export class App extends React.PureComponent <unknown, AppState> {
+	constructor(props: unknown) { 
 		super(props);
 		this.state = {
 			currentPage: Pages.start,
@@ -102,11 +113,14 @@ class App extends React.PureComponent <AppProps, AppState> {
 				text: '',
 				cardText: undefined
 			},
-			selectScope: undefined,
+			currentPageProps: pageControls[Pages.start].controlProps,
 			controlClass: pageControls[Pages.start].controlClass,
 		};
 		// @ts-ignore - for debugging
 		window.app = this;
+		// @ts-ignore
+		window.Pages = Pages; 
+		// window.onbeforeunload = () => 'Are you sure you want to exit?'; TODO enable later
 		
 		// todo
 		// addEventListener('popstate', this.handleHistoryPopState.bind(this));
@@ -149,7 +163,7 @@ class App extends React.PureComponent <AppProps, AppState> {
 		let controlClass = thisPageControl.controlClass;
 		let controlProps = this.fillTemplateText(thisPageControl.controlProps);
 		
-		let dialog, selectScope;
+		let dialog, currentPageProps;
 		
 		if (controlClass === InfoDialog) {
 			dialog = cloneAndModify(this.state.dialog, controlProps);
@@ -157,64 +171,75 @@ class App extends React.PureComponent <AppProps, AppState> {
 		}
 		else {
 			dialog = cloneAndModify(this.state.dialog, {open: false});
-		}
-		
-		if (controlClass === SelectScope) {
-			selectScope = controlProps;
+			currentPageProps = controlProps;
 		}
 		
 		this.setState({
 			currentPage: page, 
-			dialog: dialog, 
-			controlClass: controlClass,
-			selectScope: selectScope
+			dialog,
+			controlClass,
+			currentPageProps: currentPageProps,
 		});
 	}
 	
-	handleDialogClickBack() {
-		let thisPageControl = this.getThisPageControl();
-		let nextPage = resolveToValue(thisPageControl.onBack);
+	// handleDialogClickBack() {
+	// 	let thisPageControl = this.getThisPageControl();
+	// 	let nextPage = resolveToValue(thisPageControl.onBack);
 		
-		this.setPage(nextPage);
-	}
+	// 	this.setPage(nextPage);
+	// }
 	
-	/**
-	 * @param data Any data to be passed into pageControl.onContinue - Depends on the control
-	 */
-	handleDialogClickContinue(data?: unknown) {
-		let thisPageControl = this.getThisPageControl();
+	// /**
+	//  * @param data Any data to be passed into pageControl.onContinue - Depends on the control
+	//  */
+	// handleDialogClickContinue(data?: unknown) {
+	// 	let thisPageControl = this.getThisPageControl();
 		
-		let nextPage = resolveToValue(thisPageControl.onContinue, undefined, [data], this);
+	// 	let nextPage = resolveToValue(thisPageControl.onContinue, undefined, [data], this);
 		
-		this.setPage(nextPage);
+	// 	this.setPage(nextPage);
 		
-		return;
-		// Symbols can't be cloned
-		let symbolKey = Symbol.keyFor(nextPage);
-		// Add to window history for back button
-		history.pushState({page: symbolKey}, '', symbolKey); 
-	}
+	// 	return;
+	// 	// Symbols can't be cloned
+	// 	let symbolKey = Symbol.keyFor(nextPage);
+	// 	// Add to window history for back button
+	// 	history.pushState({page: symbolKey}, '', symbolKey); 
+	// }
 	
-	handlePageCallback(callback?: PageCallback) {
-		if (typeof callback !== 'function') return;
+	handlePageCallback(callbackOrPage?: PageCallback) {
+		let nextPage;
 		
-		// Mutable params to update
-		let newStateParams: AnyDict = {};
-		let nextPage = resolveToValue(callback, undefined, [this.state, newStateParams], this);
+		if (typeof callbackOrPage === 'symbol') {
+			nextPage = callbackOrPage;
+		}
+		else if (typeof callbackOrPage === 'function') {
+			// Mutable params to update
+			let newStateParams: Pick<AppState, never> = {};
+			nextPage = resolveToValue(callbackOrPage, undefined, [this.state, newStateParams], this);
+			this.setState(newStateParams);
+		}
+		else return;
 		
 		this.setPage(nextPage);
 	}
 	
 	// todo
 	handleHistoryPopState(event) {
-		console.log(event);
-		if (!event.state) return;
+		// console.log(event);
+		// if (!event.state) return;
 		
-		let lastPage: symbol = Symbol.for(event.state.page);
-		if (!lastPage) return console.log('lastpage');
+		// let lastPage: symbol = Symbol.for(event.state.page);
+		// if (!lastPage) return console.log('lastpage');
 		
-		let lastPageControl = pageControls[lastPage];
-		this.setPage(resolveToValue(lastPageControl.onBack));
+		// let lastPageControl = pageControls[lastPage];
+		// this.setPage(resolveToValue(lastPageControl.onBack));
+	}
+	
+	// todo comment
+	summonInfoDialog(props) {
+		let dialog = fillDialogProps(props);
+		dialog.open = true;
+		this.setState({dialog});
 	}
 	
 	render() {
@@ -223,11 +248,10 @@ class App extends React.PureComponent <AppProps, AppState> {
 				<Container maxWidth='xl'>
 					<HomePage 
 						dialog={this.state.dialog}
-						selectScope={this.state.selectScope}
-						onClickBack={() => this.handleDialogClickBack()}
-						onClickContinue={(data?: unknown) => this.handleDialogClickContinue(data)}
+						currentPageProps={this.state.currentPageProps}
 						controlClass={this.state.controlClass}
-						onPageCallback={(callback) => this.handlePageCallback(callback)}
+						doPageCallback={(callback) => this.handlePageCallback(callback)}
+						summonInfoDialog={(props) => this.summonInfoDialog(props)}
 					/>
 				</Container>
 			</div>

@@ -1,8 +1,5 @@
 import * as React from 'react';
-import Popover from '@mui/material/Popover';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import { Box } from '@mui/material';
+import { Popover, Button, Box } from '@mui/material';
 
 export default function BasicPopover(props: PopoverProps) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
@@ -49,6 +46,6 @@ export default function BasicPopover(props: PopoverProps) {
 
 declare interface PopoverProps extends React.PropsWithChildren {
 	startIcon?: React.ReactNode;
-	variant: 'text'|'outlined'|'contained';
+	variant: buttonVariant;
 	text: string;
 }

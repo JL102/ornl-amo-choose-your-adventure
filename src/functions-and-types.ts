@@ -1,4 +1,5 @@
-import App from "./App";
+import type { App, AppState } from "./App";
+import type { DialogProps } from "./controls";
 
 /**
  * Parse handcrafted text into pretty-printed HTML. Currently supported: 
@@ -64,6 +65,18 @@ export function shallowCompareIgnoreFuncs(obj1, obj2) {
 		(obj1[key] !== obj2[key] && typeof obj1[key] !== 'function'));
 }
 
+export function fillDialogProps(obj: AnyDict): DialogProps {
+	return {
+		open: obj.open || false,
+		title: obj.title || '',
+		text: obj.text || '',
+		cardText: obj.cardText || '',
+		img: obj.img || '',
+		imgAlt: obj.imgAlt || '',
+		buttons: obj.buttons || undefined,
+	};
+}
+
 // Helpful types
 declare global {
 	
@@ -102,5 +115,12 @@ declare global {
 	 * @param state Read-only, immutable state of the main app
 	 * @param nextState Mutable object containing properties to assign to the app's state next.
 	 */
-	type PageCallback = (this: App, state?: AnyDict, nextState?: AnyDict) => symbol;
+	type PageCallback = ((this: App, state: AppState, nextState: AnyDict) => symbol)|symbol;
+	
+	/**
+	 * JS does not discern between integers and floats, but we can still identify as necessary which numbers should be integers only.
+	 */
+	type integer = number;
+	
+	type buttonVariant = 'text'|'outlined'|'contained';
 }

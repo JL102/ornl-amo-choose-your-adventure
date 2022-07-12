@@ -1,4 +1,4 @@
-import { Box, Button, Container, CardMedia, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, useMediaQuery, Paper, Typography, Grid, Stack } from "@mui/material";
+import { Box, Button, Container, CardMedia, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, useMediaQuery, Paper, Typography, Grid, Stack, SvgIconTypeMap } from "@mui/material";
 import { comparePropsAndStateIgnoreFuncs, parseSpecialText } from "./functions-and-types";
 import { theme } from './theme';
 import PropTypes from 'prop-types';
@@ -7,13 +7,20 @@ import { styled, useTheme } from '@mui/material/styles';
 import React from 'react';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import BasicPopover from "./BasicPopover";
+import { ButtonGroup, ButtonGroupButton, ButtonGroupProps } from "./Buttons";
+
+/* -======================================================- */
+//                         CONTROLS
+/* -======================================================- */
 
 export function Emphasis(props: React.PropsWithChildren) {
 	return <span className='emphasis'>{props.children}</span>;
 }
 
-// todo types
-export function StartPage(props) {
+/**
+ * Start page
+ */
+export function StartPage(props: StartPageProps) {
 	return (
 		<React.Fragment>
 			<h1>
@@ -26,16 +33,15 @@ export function StartPage(props) {
 				Can you decarbonize this industrial facility?
 			</Typography>
 			<br/>
-			<Button onClick={props.onButtonClick} variant='contained' size='large'>START PLAYING</Button>
+			<ButtonGroup buttons={props.buttons} doPageCallback={props.doPageCallback} summonInfoDialog={props.summonInfoDialog}/>
 		</React.Fragment>
 	);
 }
 
-StartPage.propTypes = {
-	onButtonClick: PropTypes.func.isRequired
-};
-
-const Item = styled(Paper)(({ theme }) => ({
+/**
+ * Stylized "Paper" item to go inside a grid
+ */
+const PaperGridItem = styled(Paper)(({ theme }) => ({
 	backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
 	...theme.typography.body2,
 	padding: theme.spacing(1),
@@ -43,6 +49,25 @@ const Item = styled(Paper)(({ theme }) => ({
 	color: theme.palette.text.secondary,
 }));
 
+/**
+ * Optional BasicPopover info 
+ * @param popupContents Contents provided by the page control's infoPopup attribute
+ * @returns {React.Component}
+ */
+function optionalInfoPopup(buttonText: string, buttonVariant: buttonVariant, popupContents?: React.ReactNode) {
+	if (popupContents) {
+		return (
+			<BasicPopover text={buttonText} variant={buttonVariant} startIcon={<QuestionMarkIcon/>}>
+				{popupContents}
+			</BasicPopover>
+		);
+	}
+	else return <></>;
+}
+
+/**
+ * Function for selecting general scope.
+ */
 export function SelectScope(props: SelectScopeProps) {
 	
 	let numChoices = props.choices.length;
@@ -50,30 +75,25 @@ export function SelectScope(props: SelectScopeProps) {
 	
 	const gridItems = props.choices.map((choice, idx) => {
 		
-		let infoPopup = <></>;
-		if (choice.infoPopup) {
-			infoPopup = <BasicPopover text='Info' variant='outlined' startIcon={<QuestionMarkIcon/>}>
-				{choice.infoPopup}
-			</BasicPopover>;
-		}
 		
 		return (
 			<Grid item xs={12} sm={gridWidth} key={idx}>
-				<Item>
+				<PaperGridItem>
 					<Typography variant='h4'>{choice.title}</Typography>
 						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(choice.text)}/>
-						<Stack direction="row" justifyContent="center" spacing={2}>
-							{infoPopup}
-							<Button onClick={() => props.onPageCallback(choice.onSelect)} variant='contained'>Select</Button>
-						</Stack>
-				</Item>
+						<ButtonGroup buttons={choice.buttons} doPageCallback={props.doPageCallback} summonInfoDialog={props.summonInfoDialog}/>
+						{/* <Stack direction="row" justifyContent="center" spacing={2}>
+							{optionalInfoPopup('Info', 'outlined', choice.infoPopup)}
+							<Button onClick={() => props.doPageCallback(choice.onSelect)} variant='contained'>Select</Button>
+						</Stack> */}
+				</PaperGridItem>
 			</Grid>
 		);
 	});
 	
 	return (
 		<Box m={2}>
-			<Typography variant='h5' dangerouslySetInnerHTML={parseSpecialText(props.title)}></Typography>
+			<Typography variant='h5' dangerouslySetInnerHTML={parseSpecialText(props.title)}/>
 			<br/>
 			<Grid container spacing={2}>
 				{gridItems}
@@ -82,9 +102,52 @@ export function SelectScope(props: SelectScopeProps) {
 	);
 }
 
-export function GroupedChoices(props) {
+/**
+ * Generic control for picking between multiple choices across multiple groups.
+ */
+export function GroupedChoices(props: GroupedChoicesProps) {
+		
+	let numGroups = props.groups.length;
+	let gridWidth = 12 / numGroups;
+	
+	const gridItems = props.groups.map((group, idx) => {
+		
+		const choices = group.choices.map((choice, idx) => {
+			
+			return (<Grid item xs={12} key={idx}>
+				<PaperGridItem>
+					<Typography variant='h4'>{choice.title}</Typography>
+						<Typography variant='body1' p={2} dangerouslySetInnerHTML={parseSpecialText(choice.text)}/>
+						
+						<ButtonGroup 
+							buttons={choice.buttons} 
+							doPageCallback={props.doPageCallback} 
+							summonInfoDialog={props.summonInfoDialog}
+						/>
+						{/* <Stack direction="row" justifyContent="center" spacing={2}>
+							{optionalInfoPopup('Info', 'outlined', choice.infoPopup)}
+							<Button onClick={() => props.doPageCallback(choice.onSelect)} variant='contained'>Select</Button>
+						</Stack> */}
+				</PaperGridItem>
+			</Grid>);
+		});
+		
+		return (<Grid item xs={12} sm={gridWidth} key={idx}>
+			<Typography variant='h6' dangerouslySetInnerHTML={parseSpecialText(group.title)}/>
+			<Grid container spacing={2}>
+				{choices}
+			</Grid>
+		</Grid>);
+	});
+	
 	return (
-		<h1>works</h1>
+		<Box m={2}>
+			<Typography variant='h5' dangerouslySetInnerHTML={parseSpecialText(props.title)}/>
+			<br/>
+			<Grid container spacing={2}>
+				{gridItems}
+			</Grid>
+		</Box>
 	);
 }
 
@@ -109,7 +172,7 @@ function InfoDialogFunc (props: InfoDialogProps) {
 			alt={props.imgAlt}
 		/>
 		: <></>;
-	
+	console.log(props.buttons);
 	return (
 		<Dialog
 			fullScreen={fullScreen}
@@ -133,8 +196,12 @@ function InfoDialogFunc (props: InfoDialogProps) {
 				}
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={() => props.onClickBack()}>Back</Button>
-				<Button onClick={() => props.onClickContinue()}>Continue</Button>
+				<ButtonGroup 
+					buttons={props.buttons} 
+					doPageCallback={props.doPageCallback} 
+					summonInfoDialog={props.summonInfoDialog}
+					useMUIStack={false}
+				/>
 			</DialogActions>
 		</Dialog>
 	);
@@ -142,7 +209,6 @@ function InfoDialogFunc (props: InfoDialogProps) {
 
 export class InfoDialog extends React.Component <InfoDialogProps> {
 	shouldComponentUpdate(nextProps, nextState) {
-		console.log(nextProps.open);
 		return comparePropsAndStateIgnoreFuncs.apply(this, [nextProps, nextState]);
 	}
 	
@@ -153,28 +219,73 @@ export class InfoDialog extends React.Component <InfoDialogProps> {
 	}
 }
 
-export interface SelectScopeChoice {
+/* -======================================================- */
+//                      PROPS INTERFACES
+/* -======================================================- */
+
+export interface Choice {
 	title?: string;
 	text: string;
 	infoPopup?: React.ReactNode;
-	onSelect: PageCallback;
+	// onSelect: PageCallback;
 	disabled?: Resolvable<boolean>;
+	buttons?: ButtonGroupButton[];
 }
 
 export interface SelectScopeProps {
 	title: string;
-	// onChoice: PageCallback;
-	choices: SelectScopeChoice[];
-	onPageCallback: (callback?: PageCallback) => void;
+	choices: Choice[];
+	doPageCallback: (callback?: PageCallback) => void;
+	summonInfoDialog: (props) => void;
+	buttons?: ButtonGroupButton[];
+}
+
+export interface GroupedChoicesGroup {
+	title: string;
+	choices: Choice[];
+}
+
+export interface GroupedChoicesProps {
+	title: string;
+	groups: GroupedChoicesGroup[];
+	doPageCallback: (callback?: PageCallback) => void;
+	summonInfoDialog: (props) => void;
 }
 
 export interface InfoDialogProps {
 	img?: string;
 	imgAlt?: string;
 	open: boolean;
-	onClickBack: () => void;
-	onClickContinue: (data?: unknown) => void;
 	text: string;
 	cardText?: string;
 	title: string;
+	buttons?: ButtonGroupButton[];
+	doPageCallback: (callback?: PageCallback) => void;
+	summonInfoDialog: (props) => void;
+}
+
+export declare interface StartPageProps {
+	onButtonClick: () => void;
+	buttons?: ButtonGroupButton[];
+	doPageCallback: (callback?: PageCallback) => void;
+	summonInfoDialog: (props) => void;
+}
+
+/**
+ * Control properties specified by the scripter (in pages.tsx).
+ */
+export declare interface DialogControlProps {
+	title: string;
+	text: string;
+	cardText?: string;
+	img?: string;
+	imgAlt?: string;
+	buttons?: ButtonGroupButton[];
+}
+
+/**
+ * Properties sent to the InfoDialog control.
+ */
+export declare interface DialogProps extends DialogControlProps {
+	open: boolean;
 }
