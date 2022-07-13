@@ -7,9 +7,10 @@ import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import Co2Icon from '@mui/icons-material/Co2';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import { Grid, Typography } from "@mui/material";
+import { Grid, SvgIconTypeMap, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { backButton, continueButton, selectButton, infoButtonWithPopup, infoButtonWithDialog, ButtonGroupButton } from "./Buttons";
+import type { OverridableComponent } from "@mui/material/OverridableComponent";
 
 let st = performance.now();
 /**
@@ -65,25 +66,11 @@ pageControls[Pages.selectScope] = {
 				text: 'Tackle Scope 1 emissions – fossil fuel consumption',
 				buttons: [
 					infoButtonWithPopup(
-						<div style={{maxWidth: '200px'}}>
-							<Typography variant='h6'>
-								Scope 1: Direct Emissions
-							</Typography>
-							<Typography variant='body1'>Company emissions that are owned or controlled by the organization directly.</Typography>
-							<Box sx={{marginTop: 2}}>
-								<Grid container spacing={4} sx={{textAlign: 'center'}}>
-									<Grid item xs={4}>
-										<LocalShippingIcon fontSize='large'/>
-									</Grid>
-									<Grid item xs={4}>
-										<FactoryIcon fontSize='large'/>
-									</Grid>
-									<Grid item xs={4}>
-										<LocationCityIcon fontSize='large'/>
-									</Grid>
-								</Grid>
-							</Box>
-						</div>
+						infoPopupWithIcons(
+							'Scope 1: Direct Emissions',
+							'Company emissions that are owned or controlled by the organization directly.',
+							[LocalShippingIcon, FactoryIcon, LocationCityIcon],
+						)
 					),
 					selectButton(Pages.scope1Projects),
 				],
@@ -93,27 +80,63 @@ pageControls[Pages.selectScope] = {
 				text: 'Tackle Scope 1 emissions – fossil fuel consumption',
 				buttons: [
 					infoButtonWithPopup(
-						<div style={{maxWidth: '200px'}}>
-							<Typography variant='h6'>
-								Scope 2: Indirect Emissions
-							</Typography>
-							<Typography variant='body1'>Company emissions that are caused indirectly when the energy it purchases and uses is produced.</Typography>
-							<Box sx={{marginTop: 2}}>
-								<Grid container spacing={4} sx={{textAlign: 'center'}}>
-									<Grid item xs={6}>
-										<FlashOnIcon fontSize='large'/>
-									</Grid>
-									<Grid item xs={6}>
-										<ElectricalServicesIcon fontSize='large'/>
-									</Grid>
-								</Grid>
-							</Box>
-						</div>
+						infoPopupWithIcons(
+							'Scope 2: Indirect Emissions',
+							'Company emissions that are caused indirectly when the energy it purchases and uses is produced.',
+							[FlashOnIcon, ElectricalServicesIcon]
+						)
 					),
 					selectButton(Pages.scope2Projects),
 				],
 			},
 			
+		]
+	}
+};
+
+pageControls[Pages.selectScope] = {
+	controlClass: GroupedChoices,
+	controlProps: {
+		title: 'To begin, you will need to decide which types of projects to pursue. {Would you like to...}',
+		groups: [
+			{	
+				title: '',
+				choices: [
+					{
+						title: 'A',
+						text: 'Tackle Scope 1 emissions – fossil fuel consumption',
+						buttons: [
+							infoButtonWithPopup(
+								infoPopupWithIcons(
+									'Scope 1: Direct Emissions',
+									'Company emissions that are owned or controlled by the organization directly.',
+									[LocalShippingIcon, FactoryIcon, LocationCityIcon],
+								)
+							),
+							selectButton(Pages.scope1Projects),
+						],
+					},
+					
+				]
+			}, {
+				title: '',
+				choices: [
+					{
+						title: 'B',
+						text: 'Tackle Scope 1 emissions – fossil fuel consumption',
+						buttons: [
+							infoButtonWithPopup(
+								infoPopupWithIcons(
+									'Scope 2: Indirect Emissions',
+									'Company emissions that are caused indirectly when the energy it purchases and uses is produced.',
+									[FlashOnIcon, ElectricalServicesIcon]
+								)
+							),
+							selectButton(Pages.scope2Projects),
+						],
+					},
+				]
+			}
 		]
 	}
 };
@@ -209,6 +232,31 @@ function co2SavingsButton(percent: number): ButtonGroupButton {
 		startIcon: <Co2Icon/>,
 		infoPopup: <Typography variant='body1'>This project would provide {percent}% in CO<sub>2</sub> savings.</Typography>
 	};
+}
+
+// todo: investigate whether making this a callback improves page load time (by not resolving all the react components at the start)
+function infoPopupWithIcons(title: string, bodyText: string, icons: Array<OverridableComponent<SvgIconTypeMap>>) {
+	
+	const gridWidth = 12 / icons.length;
+	
+	const gridItems = icons.map((Icon, idx) => (
+		<Grid item xs={gridWidth} key={idx}>
+			<Icon fontSize='large'/>
+			{/* {icon} */}
+		</Grid>
+	));
+	
+	return (
+		<div style={{maxWidth: '200px'}}>
+			<Typography variant='h6'>{title}</Typography>
+			<Typography variant='body1'>{bodyText}</Typography>
+			<Box sx={{marginTop: 2}}>
+				<Grid container spacing={4} sx={{textAlign: 'center'}}>
+					{gridItems}
+				</Grid>
+			</Box>
+		</div>
+	);
 }
 
 console.log(performance.now() - st);

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Popover, Button, Box } from '@mui/material';
+import { resolveToValue } from './functions-and-types';
 
 export default function BasicPopover(props: PopoverProps) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
@@ -38,7 +39,7 @@ export default function BasicPopover(props: PopoverProps) {
 				horizontal: 'center',
 			}}
 		>
-			<Box sx={{ p: 2 }}>{props.children}</Box>
+			<Box sx={{ p: 2 }}>{resolveToValue(props.children)}</Box>
 		</Popover>
     </React.Fragment>
   );

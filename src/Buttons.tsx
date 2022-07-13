@@ -3,7 +3,7 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import React from 'react';
 import BasicPopover from "./BasicPopover";
 import { fillDialogProps, resolveToValue } from './functions-and-types';
-import { DialogControlProps, DialogProps } from './controls';
+import { DialogControlProps, DialogStateProps } from './controls';
 import type App from './App';
 
 export declare interface ButtonGroupButton {
@@ -22,7 +22,7 @@ export declare interface ButtonGroupButton {
 	/**
 	 * Contents to appear in an InfoDialog. Mutually exclusive with infoPopup and onClick.
 	 */
-	infoDialog?: DialogProps; // todo
+	infoDialog?: DialogStateProps; // todo
 	/**
 	 * PageCallback to run on click. Mutually exclusive with infoPopup and infoDialog.
 	 */

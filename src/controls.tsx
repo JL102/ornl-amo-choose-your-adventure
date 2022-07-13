@@ -164,15 +164,18 @@ function InfoDialogFunc (props: InfoDialogProps) {
 	const theme = useTheme();
 	const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 	
+	// Optional objectFit parameter
+	let objectFit = (props.objectFit) ? props.objectFit : 'cover';
+	
 	const cardImage = (props.img) ? 
 		<CardMedia
 			component="img"
 			height="260"
 			image={props.img}
 			alt={props.imgAlt}
+			sx={{objectFit: objectFit}}
 		/>
 		: <></>;
-	console.log(props.buttons);
 	return (
 		<Dialog
 			fullScreen={fullScreen}
@@ -223,11 +226,20 @@ export class InfoDialog extends React.Component <InfoDialogProps> {
 //                      PROPS INTERFACES
 /* -======================================================- */
 
+/**
+ * Callbacks sent to every control. Component props extend this interface.
+ */
+export interface ControlCallbacks {
+	doPageCallback: (callback?: PageCallback) => void;
+	summonInfoDialog: (props) => void;
+}
+
+// -=============- CHOICE PAGES -=============-
+
 export interface Choice {
 	title?: string;
 	text: string;
 	infoPopup?: React.ReactNode;
-	// onSelect: PageCallback;
 	disabled?: Resolvable<boolean>;
 	buttons?: ButtonGroupButton[];
 }
@@ -245,31 +257,25 @@ export interface GroupedChoicesGroup {
 	choices: Choice[];
 }
 
-export interface GroupedChoicesProps {
+export interface GroupedChoicesControlProps {
 	title: string;
 	groups: GroupedChoicesGroup[];
-	doPageCallback: (callback?: PageCallback) => void;
-	summonInfoDialog: (props) => void;
 }
 
-export interface InfoDialogProps {
-	img?: string;
-	imgAlt?: string;
-	open: boolean;
-	text: string;
-	cardText?: string;
-	title: string;
+export interface GroupedChoicesProps extends GroupedChoicesControlProps, ControlCallbacks { }
+
+// -=============- START PAGE -=============-
+
+/**
+ * Control properties specified by the scripter (in pages.tsx).
+ */
+export declare interface StartPageControlProps {
 	buttons?: ButtonGroupButton[];
-	doPageCallback: (callback?: PageCallback) => void;
-	summonInfoDialog: (props) => void;
 }
 
-export declare interface StartPageProps {
-	onButtonClick: () => void;
-	buttons?: ButtonGroupButton[];
-	doPageCallback: (callback?: PageCallback) => void;
-	summonInfoDialog: (props) => void;
-}
+export declare interface StartPageProps extends StartPageControlProps, ControlCallbacks { }
+
+// -=============- DIALOGS -=============-
 
 /**
  * Control properties specified by the scripter (in pages.tsx).
@@ -279,13 +285,19 @@ export declare interface DialogControlProps {
 	text: string;
 	cardText?: string;
 	img?: string;
+	objectFit?: 'cover'|'contain';
 	imgAlt?: string;
 	buttons?: ButtonGroupButton[];
 }
 
 /**
- * Properties sent to the InfoDialog control.
+ * Dialog properties stored in app state.
  */
-export declare interface DialogProps extends DialogControlProps {
+export declare interface DialogStateProps extends DialogControlProps {
 	open: boolean;
 }
+
+/**
+ * Properties sent to the InfoDialog control.
+ */
+export declare interface InfoDialogProps extends DialogStateProps, ControlCallbacks { }

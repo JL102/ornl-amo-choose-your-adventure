@@ -1,5 +1,5 @@
 import type { App, AppState } from "./App";
-import type { DialogProps } from "./controls";
+import type { DialogStateProps } from "./controls";
 
 /**
  * Parse handcrafted text into pretty-printed HTML. Currently supported: 
@@ -65,7 +65,7 @@ export function shallowCompareIgnoreFuncs(obj1, obj2) {
 		(obj1[key] !== obj2[key] && typeof obj1[key] !== 'function'));
 }
 
-export function fillDialogProps(obj: AnyDict): DialogProps {
+export function fillDialogProps(obj: AnyDict): DialogStateProps {
 	return {
 		open: obj.open || false,
 		title: obj.title || '',

@@ -6,7 +6,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import { InfoDialogProps, InfoDialog, StartPage, SelectScope, SelectScopeProps, GroupedChoices, DialogProps } from './controls';
+import { InfoDialogProps, InfoDialog, StartPage, SelectScope, SelectScopeProps, GroupedChoices, DialogStateProps } from './controls';
 import { Component, pageControls, PageError, Pages } from './pages';
 import { resolveToValue, fillDialogProps } from './functions-and-types';
 import { ButtonGroupButton } from './Buttons';
@@ -23,7 +23,7 @@ interface HomeProps {
 export interface AppState {
 	currentPage: symbol;
 	companyName: string;
-	dialog: DialogProps,
+	dialog: DialogStateProps,
 	currentPageProps?: AnyDict; // todo
 	controlClass?: Component;
 }
